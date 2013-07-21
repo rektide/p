@@ -348,7 +348,6 @@
 			return P( values ).then( onFulfilled );
 		}
 
-		handleValues._ = f;
 		return handleValues;
 	}
 
@@ -399,6 +398,45 @@
 			d.resolve( output );
 		}
 		return d.promise;
+	}
+
+	P.any = any;
+	function any(){
+		var d = defer();
+		var foundOne = false;
+		for(var i = 0; i < arguments.length; ++i){
+			var arg= arguments[i]
+			if(arg && arg.then){
+				foundOne = true
+				arg.then(d.resolve, d.reject)
+			}
+		}
+		if(!foundOne)
+			d.resolve()
+		return d.promise
+	}
+
+	P.some = some;
+	function some(){
+		var d= defer()
+		var reject= (function(index,rejecter){
+			return function (reason){
+				if(--index == 0)
+					rejecter(reason)
+			}
+		})(arguments.length,d.reject)
+		for(var i = 0; i < arguments.length; ++i){
+			var arg= arguments[i]
+			if ( arg && arg.then ) {
+				foundOne = true
+				arg.then(d.resolve,reject)
+			} else if ( arg ) {
+				d.resolve(arg)
+			} else {
+				reject()
+			}
+		}
+		return d.promise
 	}
 
 	P.promised = promised;
